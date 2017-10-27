@@ -13,7 +13,7 @@ print filename
 img_Org = cv2.imread( filename, cv2.COLOR_BGR2RGB )
 """
 
-img_Org = cv2.imread( "In.bmp", cv2.COLOR_BGR2RGB )
+img_Org = cv2.imread( "In2.bmp", cv2.COLOR_BGR2RGB )
 jpgheight, jpgwidth, jpgch = img_Org.shape
 
 img = np.zeros(img_Org.shape, np.int)
@@ -27,8 +27,12 @@ RectInsindBoxPos = np.zeros((4,6,2), np.int)
 ROB_Size = 4
 RIB_Size = 10
 
-DragBoxPosX=-1
-DragBoxPosY=-1
+DragOutBoxPosY=-1
+DragOutBoxPosX=-1
+
+DragInBoxPosY=-1
+DragInBoxPosX=-1
+
 
 #http://xritephoto.com/documents/literature/en/ColorData-1p_EN.pdf
 cdIdealRGB = \
@@ -60,6 +64,17 @@ def Check_RectOutBoxIn(x,y):
         for j in range(0, 3):
             if (x >= RectOutBoxPos[i][j][0] - DragSize) and (x <= RectOutBoxPos[i][j][0] + DragSize) and (
                         y >= RectOutBoxPos[i][j][1] - DragSize) and (y <= RectOutBoxPos[i][j][1] + DragSize):
+                return i, j
+    return -1,-1
+
+def Check_RectInBoxIn(x,y):
+    global RectOutBoxPos,RIB_Size
+
+    DragSize = RIB_Size+2
+    for i in range(0, 4):
+        for j in range(0, 6):
+            if (x >= RectInsindBoxPos[i][j][0] - DragSize) and (x <= RectInsindBoxPos[i][j][0] + DragSize) and (
+                        y >= RectInsindBoxPos[i][j][1] - DragSize) and (y <= RectInsindBoxPos[i][j][1] + DragSize):
                 return i, j
     return -1,-1
 
@@ -99,9 +114,6 @@ def Cal_RectOut():
 def draw_RectOut():
     global img,img_Org,imgOut,RectOutBoxPos,ROB_Size
 
-    img = np.zeros(img_Org.shape, np.int)
-    img = copy.deepcopy(img_Org)
-
     cv2.line(img, GetOutBoxPos(0,0), GetOutBoxPos(0,1), (255, 255, 255), 1)
     cv2.line(img, GetOutBoxPos(0,1), GetOutBoxPos(0,2), (255, 255, 255), 1)
 
@@ -118,9 +130,9 @@ def draw_RectOut():
         for j in range(0, 3):
             cv2.rectangle(img, GetOutBoxPos(i, j, -ROB_Size), GetOutBoxPos(i, j, ROB_Size), (255, 255, 255), 1)
 
-    draw_RectIn()
 
-    imgOut = copy.deepcopy(img)
+
+
 
 
 def Cal_RectIn():
@@ -225,21 +237,21 @@ def Cal_RectIn():
     downY[4] = dP2[1] + ((dP3[1] - dP2[1]) / 6) * 3
     downY[5] = dP2[1] + ((dP3[1] - dP2[1]) / 6) * 5
 
-    InBoxSizeH14[0] = (abs(downY[0] - upY[0])) / 4
-    InBoxSizeH14[1] = (abs(downY[1] - upY[1])) / 4
-    InBoxSizeH14[2] = (abs(downY[2] - upY[2])) / 4
+    InBoxSizeH14[0] = (abs(midY[0] - upY[0])) / 2
+    InBoxSizeH14[1] = (abs(midY[1] - upY[1])) / 2
+    InBoxSizeH14[2] = (abs(midY[2] - upY[2])) / 2
 
-    InBoxSizeH24[0] = (abs(downY[3] - upY[3])) / 4
-    InBoxSizeH24[1] = (abs(downY[4] - upY[4])) / 4
-    InBoxSizeH24[2] = (abs(downY[5] - upY[5])) / 4
+    InBoxSizeH24[0] = (abs(midY[3] - upY[3])) / 2
+    InBoxSizeH24[1] = (abs(midY[4] - upY[4])) / 2
+    InBoxSizeH24[2] = (abs(midY[5] - upY[5])) / 2
 
-    InBoxSizeH34[0] = (abs(downY[0] - upY[0])) / 4
-    InBoxSizeH34[1] = (abs(downY[1] - upY[1])) / 4
-    InBoxSizeH34[2] = (abs(downY[2] - upY[2])) / 4
+    InBoxSizeH34[0] = (abs(downY[0] - midY[0])) / 2
+    InBoxSizeH34[1] = (abs(downY[1] - midY[1])) / 2
+    InBoxSizeH34[2] = (abs(downY[2] - midY[2])) / 2
 
-    InBoxSizeH44[0] = (abs(downY[3] - upY[3])) / 4
-    InBoxSizeH44[1] = (abs(downY[4] - upY[4])) / 4
-    InBoxSizeH44[2] = (abs(downY[5] - upY[5])) / 4
+    InBoxSizeH44[0] = (abs(downY[3] - midY[3])) / 2
+    InBoxSizeH44[1] = (abs(downY[4] - midY[4])) / 2
+    InBoxSizeH44[2] = (abs(downY[5] - midY[5])) / 2
 
 
     for j in range(0, 2):
@@ -265,7 +277,6 @@ def Cal_RectIn():
 
 def draw_RectIn():
     global img, img_Org, imgOut, RectInsindBoxPos,RIB_Size
-    Cal_RectIn()
 
     for i in range(0, 4):
         for j in range(0, 6):
@@ -323,27 +334,40 @@ def draw_RectInerIn():
 
 
 
+
+def Cal_BOX():
+    return 0
+
+def draw_BOX():
+    return 0
+
 def draw_circle(event, x,y, flags, param):
-    global drawing, img, img_Org, imgOut,RectOutBoxPos,DragBoxPosX,DragBoxPosY
+    global drawing, img, img_Org, imgOut,RectOutBoxPos,DragOutBoxPosX,DragOutBoxPosY,DragInBoxPosX,DragInBoxPosY
 
 
     if event == cv2.EVENT_LBUTTONDOWN:
-        DragBoxPosY,DragBoxPosX = Check_RectOutBoxIn(x, y)
 
-        if DragBoxPosX==-1 or DragBoxPosY==-1 :
+        DragOutBoxPosY,DragOutBoxPosX = Check_RectOutBoxIn(x, y)
+        DragInBoxPosY, DragInBoxPosX = Check_RectInBoxIn(x, y)
+
+        if DragInBoxPosY!=-1 and DragInBoxPosX!=-1 :
+            # print "move In box"
+            drawing = 4
+        elif DragOutBoxPosY == 1 and DragOutBoxPosX == 1:
+            drawing = 3
+            # print "move outbox"
+        elif DragOutBoxPosY != -1 and DragOutBoxPosX != -1:
+            drawing = 2
+            #print "move outbox"
+        else:
             drawing = 1
             RectOutBoxPos[0][0][0] = x
             RectOutBoxPos[0][0][1] = y
-            #print "new box",drawing
-        elif DragBoxPosX == 1 and DragBoxPosY == 1:
-            drawing = 3
-            #print "move box"
-        else:
-            drawing = 2
-            #print "modi box", DragBoxPosY,DragBoxPosX
-
+            # print "new box",drawing
 
     elif event == cv2.EVENT_MOUSEMOVE:
+
+
         if drawing == 1:
            img = np.zeros(img_Org.shape, np.int)
            img = copy.deepcopy(img_Org)
@@ -351,19 +375,40 @@ def draw_circle(event, x,y, flags, param):
            imgOut = copy.deepcopy(img)
 
         elif drawing == 3:
+            img = np.zeros(img_Org.shape, np.int)
+            img = copy.deepcopy(img_Org)
             moveX=RectOutBoxPos[1][1][0]-x
             moveY=RectOutBoxPos[1][1][1]-y
             for i in range(0, 3):
                 for j in range(0, 3):
                     RectOutBoxPos[i][j][0] = RectOutBoxPos[i][j][0] - moveX
                     RectOutBoxPos[i][j][1] = RectOutBoxPos[i][j][1] - moveY
+            for i in range(0, 4):
+                for j in range(0, 6):
+                    RectInsindBoxPos[i][j][0] = RectInsindBoxPos[i][j][0] - moveX
+                    RectInsindBoxPos[i][j][1] = RectInsindBoxPos[i][j][1] - moveY
             draw_RectOut()
+            draw_RectIn()
 
         elif drawing == 2:
-            RectOutBoxPos[DragBoxPosY][DragBoxPosX][0] = x
-            RectOutBoxPos[DragBoxPosY][DragBoxPosX][1] = y
+            img = np.zeros(img_Org.shape, np.int)
+            img = copy.deepcopy(img_Org)
+            RectOutBoxPos[DragOutBoxPosY][DragOutBoxPosX][0] = x
+            RectOutBoxPos[DragOutBoxPosY][DragOutBoxPosX][1] = y
             draw_RectOut()
+            Cal_RectIn()
+            draw_RectIn()
 
+        elif drawing == 4:
+            img = np.zeros(img_Org.shape, np.int)
+            img = copy.deepcopy(img_Org)
+            RectInsindBoxPos[DragInBoxPosY][DragInBoxPosX][0] = x
+            RectInsindBoxPos[DragInBoxPosY][DragInBoxPosX][1] = y
+            draw_RectOut()
+            draw_RectIn()
+
+
+        imgOut = copy.deepcopy(img)
 
 
     elif event == cv2.EVENT_LBUTTONUP:
@@ -377,15 +422,21 @@ def draw_circle(event, x,y, flags, param):
             drawing = 9
             Cal_RectOut()
             draw_RectOut()
-
+            Cal_RectIn()
+            draw_RectIn()
+        elif drawing == 4:
+            drawing = 9
         elif drawing == 3:
             drawing = 9
         elif  drawing == 2:
             drawing = 9
-            RectOutBoxPos[DragBoxPosY][DragBoxPosX][0] = x
-            RectOutBoxPos[DragBoxPosY][DragBoxPosX][1] = y
+            RectOutBoxPos[DragOutBoxPosY][DragOutBoxPosX][0] = x
+            RectOutBoxPos[DragOutBoxPosY][DragOutBoxPosX][1] = y
             draw_RectOut()
 
+        draw_RectOut()
+        draw_RectIn()
+        imgOut = copy.deepcopy(img)
 
 
 
@@ -395,6 +446,10 @@ cv2.setMouseCallback('imgOut',draw_circle)
 #cv2.rectangle(img, (195, 105), (514, 364),(255,255,255),1)
 
 while True:
+
+
+
+
     cv2.imshow('imgOut', imgOut)
 
     k = cv2.waitKey(1) & 0xFF
