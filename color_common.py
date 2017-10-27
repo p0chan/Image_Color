@@ -17,6 +17,8 @@ img_Org = cv2.imread( "In.bmp", cv2.COLOR_BGR2RGB )
 jpgheight, jpgwidth, jpgch = img_Org.shape
 
 img = np.zeros(img_Org.shape, np.int)
+img = copy.deepcopy(img_Org)
+
 imgOut = np.zeros(img_Org.shape, np.int)
 imgOut = copy.deepcopy(img_Org)
 
