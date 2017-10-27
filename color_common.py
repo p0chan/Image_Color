@@ -13,7 +13,7 @@ print filename
 img_Org = cv2.imread( filename, cv2.COLOR_BGR2RGB )
 """
 
-img_Org = cv2.imread( "In2.bmp", cv2.COLOR_BGR2RGB )
+img_Org = cv2.imread( "In.bmp", cv2.COLOR_BGR2RGB )
 jpgheight, jpgwidth, jpgch = img_Org.shape
 
 img = np.zeros(img_Org.shape, np.int)
