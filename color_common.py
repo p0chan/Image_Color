@@ -30,6 +30,7 @@ RIB_Size = 10
 DragBoxPosX=-1
 DragBoxPosY=-1
 
+#http://xritephoto.com/documents/literature/en/ColorData-1p_EN.pdf
 cdIdealRGB = \
     [[[68,82,115],     [130,150,194],     [157,122,98],     [67,108,87],     [177,128,133],     [170,189,103]],
      [[44,126,224],     [166,91,80],     [99,90,193],     [108,60,94],     [64,188,157],     [46,163,224]],
@@ -53,10 +54,12 @@ def GetInBoxPos(y,x,Offset=0):
 
 def Check_RectOutBoxIn(x,y):
     global RectOutBoxPos,ROB_Size
+
+    DragSize = ROB_Size+2
     for i in range(0, 3):
         for j in range(0, 3):
-            if (x >= RectOutBoxPos[i][j][0] - ROB_Size) and (x <= RectOutBoxPos[i][j][0] + ROB_Size) and (
-                        y >= RectOutBoxPos[i][j][1] - ROB_Size) and (y <= RectOutBoxPos[i][j][1] + ROB_Size):
+            if (x >= RectOutBoxPos[i][j][0] - DragSize) and (x <= RectOutBoxPos[i][j][0] + DragSize) and (
+                        y >= RectOutBoxPos[i][j][1] - DragSize) and (y <= RectOutBoxPos[i][j][1] + DragSize):
                 return i, j
     return -1,-1
 
@@ -123,24 +126,139 @@ def draw_RectOut():
 def Cal_RectIn():
     global img, img_Org, imgOut, RectOutBoxPos, RectInsindBoxPos
 
-    ww = (abs(RectOutBoxPos[2][2][0] - RectOutBoxPos[0][0][0]))
-    hh = (abs(RectOutBoxPos[2][2][1] - RectOutBoxPos[0][0][1]))
-    InBoxSizeW = ww / 6
-    InBoxSizeH = hh / 4
+    InBoxSizeW14 = np.zeros(2, np.int)
+    InBoxSizeW24 = np.zeros(2, np.int)
+    InBoxSizeW34 = np.zeros(2, np.int)
+    InBoxSizeW44 = np.zeros(2, np.int)
+    InBoxSizeH14 = np.zeros(3, np.int)
+    InBoxSizeH24 = np.zeros(3, np.int)
+    InBoxSizeH34 = np.zeros(3, np.int)
+    InBoxSizeH44 = np.zeros(3, np.int)
 
-    for j in range(0, 6):
-        RectInsindBoxPos[0][j][0] = RectOutBoxPos[0][0][0] + (j * InBoxSizeW) + InBoxSizeW / 2
-        RectInsindBoxPos[1][j][0] = RectOutBoxPos[0][0][0] + (j * InBoxSizeW) + InBoxSizeW / 2
-        RectInsindBoxPos[2][j][0] = RectOutBoxPos[0][0][0] + (j * InBoxSizeW) + InBoxSizeW / 2
-        RectInsindBoxPos[3][j][0] = RectOutBoxPos[0][0][0] + (j * InBoxSizeW) + InBoxSizeW / 2
+    leftX = np.zeros(4, np.int)
+    midX = np.zeros(4, np.int)
+    rightX = np.zeros(4, np.int)
+    upY  = np.zeros(6, np.int)
+    midY = np.zeros(6, np.int)
+    downY = np.zeros(6, np.int)
 
-    for j in range(0, 4):
-        RectInsindBoxPos[j][0][1] = RectOutBoxPos[0][0][1] + (j * InBoxSizeH) + InBoxSizeH / 2
-        RectInsindBoxPos[j][1][1] = RectOutBoxPos[0][0][1] + (j * InBoxSizeH) + InBoxSizeH / 2
-        RectInsindBoxPos[j][2][1] = RectOutBoxPos[0][0][1] + (j * InBoxSizeH) + InBoxSizeH / 2
-        RectInsindBoxPos[j][3][1] = RectOutBoxPos[0][0][1] + (j * InBoxSizeH) + InBoxSizeH / 2
-        RectInsindBoxPos[j][4][1] = RectOutBoxPos[0][0][1] + (j * InBoxSizeH) + InBoxSizeH / 2
-        RectInsindBoxPos[j][5][1] = RectOutBoxPos[0][0][1] + (j * InBoxSizeH) + InBoxSizeH / 2
+
+    lP1 = GetOutBoxPos(0, 0)
+    lP2 = GetOutBoxPos(1, 0)
+    lP3 = GetOutBoxPos(2, 0)
+    leftX[0] = lP1[0] + ((lP2[0] - lP1[0]) / 4)
+    leftX[1] = lP1[0] + ((lP2[0] - lP1[0]) / 4) * 3
+    leftX[2] = lP2[0] + ((lP3[0] - lP2[0]) / 4)
+    leftX[3] = lP2[0] + ((lP3[0] - lP2[0]) / 4) * 3
+
+    wmP1 = GetOutBoxPos(0, 1)
+    wmP2 = GetOutBoxPos(1, 1)
+    wmP3 = GetOutBoxPos(2, 1)
+    midX[0] = wmP1[0] + ((wmP2[0] - wmP1[0]) / 4)
+    midX[1] = wmP1[0] + ((wmP2[0] - wmP1[0]) / 4) * 3
+    midX[2] = wmP2[0] + ((wmP3[0] - wmP2[0]) / 4)
+    midX[3] = wmP2[0] + ((wmP3[0] - wmP2[0]) / 4) * 3
+
+    rP1 = GetOutBoxPos(0, 2)
+    rP2 = GetOutBoxPos(1, 2)
+    rP3 = GetOutBoxPos(2, 2)
+    rightX[0] = rP1[0] + ((rP2[0] - rP1[0]) / 4)
+    rightX[1] = rP1[0] + ((rP2[0] - rP1[0]) / 4) * 3
+    rightX[2] = rP2[0] + ((rP3[0] - rP2[0]) / 4)
+    rightX[3] = rP2[0] + ((rP3[0] - rP2[0]) / 4) * 3
+
+
+    InBoxSizeW14[0] = (abs(leftX[0] - midX[0])) / 3
+    InBoxSizeW14[1] = (abs(leftX[1] - midX[1])) / 3
+
+    InBoxSizeW24[0] = (abs(rightX[0] - midX[0])) / 3
+    InBoxSizeW24[1] = (abs(rightX[1] - midX[1])) / 3
+
+    InBoxSizeW34[0] = (abs(leftX[2] - midX[2])) / 3
+    InBoxSizeW34[1] = (abs(leftX[3] - midX[3])) / 3
+
+    InBoxSizeW44[0] = (abs(rightX[2] - midX[2])) / 3
+    InBoxSizeW44[1] = (abs(rightX[3] - midX[3])) / 3
+
+
+    for j in range(0, 3):
+        RectInsindBoxPos[0][j][0] = leftX[0] + (j * InBoxSizeW14[0]) + InBoxSizeW14[0] / 2
+        RectInsindBoxPos[1][j][0] = leftX[1] + (j * InBoxSizeW14[1]) + InBoxSizeW14[1] / 2
+        RectInsindBoxPos[2][j][0] = leftX[2] + (j * InBoxSizeW34[0]) + InBoxSizeW34[0] / 2
+        RectInsindBoxPos[3][j][0] = leftX[3] + (j * InBoxSizeW34[1]) + InBoxSizeW34[1] / 2
+        RectInsindBoxPos[0][3+j][0] = midX[0] + (3+j * InBoxSizeW24[0]) + InBoxSizeW24[0] / 2
+        RectInsindBoxPos[1][3+j][0] = midX[1] + (3+j * InBoxSizeW24[1]) + InBoxSizeW24[1] / 2
+        RectInsindBoxPos[2][3+j][0] = midX[2] + (3+j * InBoxSizeW44[0]) + InBoxSizeW44[0] / 2
+        RectInsindBoxPos[3][3+j][0] = midX[3] + (3+j * InBoxSizeW44[1]) + InBoxSizeW44[1] / 2
+
+    uP1 = GetOutBoxPos(0, 0)
+    uP2 = GetOutBoxPos(0, 1)
+    uP3 = GetOutBoxPos(0, 2)
+    upY[0] = uP1[1] + ((uP2[1] - uP1[1]) / 6)
+    upY[1] = uP1[1] + ((uP2[1] - uP1[1]) / 6) * 3
+    upY[2] = uP1[1] + ((uP2[1] - uP1[1]) / 6) * 5
+
+    upY[3] = uP2[1] + ((uP3[1] - uP2[1]) / 6)
+    upY[4] = uP2[1] + ((uP3[1] - uP2[1]) / 6) * 3
+    upY[5] = uP2[1] + ((uP3[1] - uP2[1]) / 6) * 5
+
+    mhP1 = GetOutBoxPos(1, 0)
+    mhP2 = GetOutBoxPos(1, 1)
+    mhP3 = GetOutBoxPos(1, 2)
+    midY[0] = mhP1[1] + ((mhP2[1] - mhP1[1]) / 6)
+    midY[1] = mhP1[1] + ((mhP2[1] - mhP1[1]) / 6) * 3
+    midY[2] = mhP1[1] + ((mhP2[1] - mhP1[1]) / 6) * 5
+
+    midY[3] = mhP2[1] + ((mhP3[1] - mhP2[1]) / 6)
+    midY[4] = mhP2[1] + ((mhP3[1] - mhP2[1]) / 6) * 3
+    midY[5] = mhP2[1] + ((mhP3[1] - mhP2[1]) / 6) * 5
+
+
+    dP1 = GetOutBoxPos(2, 0)
+    dP2 = GetOutBoxPos(2, 1)
+    dP3 = GetOutBoxPos(2, 2)
+    downY[0] = dP1[1] + ((dP2[1] - dP1[1]) / 6)
+    downY[1] = dP1[1] + ((dP2[1] - dP1[1]) / 6) * 3
+    downY[2] = dP1[1] + ((dP2[1] - dP1[1]) / 6) * 5
+
+    downY[3] = dP2[1] + ((dP3[1] - dP2[1]) / 6)
+    downY[4] = dP2[1] + ((dP3[1] - dP2[1]) / 6) * 3
+    downY[5] = dP2[1] + ((dP3[1] - dP2[1]) / 6) * 5
+
+    InBoxSizeH14[0] = (abs(downY[0] - upY[0])) / 4
+    InBoxSizeH14[1] = (abs(downY[1] - upY[1])) / 4
+    InBoxSizeH14[2] = (abs(downY[2] - upY[2])) / 4
+
+    InBoxSizeH24[0] = (abs(downY[3] - upY[3])) / 4
+    InBoxSizeH24[1] = (abs(downY[4] - upY[4])) / 4
+    InBoxSizeH24[2] = (abs(downY[5] - upY[5])) / 4
+
+    InBoxSizeH34[0] = (abs(downY[0] - upY[0])) / 4
+    InBoxSizeH34[1] = (abs(downY[1] - upY[1])) / 4
+    InBoxSizeH34[2] = (abs(downY[2] - upY[2])) / 4
+
+    InBoxSizeH44[0] = (abs(downY[3] - upY[3])) / 4
+    InBoxSizeH44[1] = (abs(downY[4] - upY[4])) / 4
+    InBoxSizeH44[2] = (abs(downY[5] - upY[5])) / 4
+
+
+    for j in range(0, 2):
+        RectInsindBoxPos[j][0][1] = upY[0] + (j * InBoxSizeH14[0]) + InBoxSizeH14[0] / 2
+        RectInsindBoxPos[j][1][1] = upY[1] + (j * InBoxSizeH14[1]) + InBoxSizeH14[1] / 2
+        RectInsindBoxPos[j][2][1] = upY[2] + (j * InBoxSizeH14[2]) + InBoxSizeH14[2] / 2
+
+        RectInsindBoxPos[j][3][1] = upY[3] + (j * InBoxSizeH24[0]) + InBoxSizeH24[0] / 2
+        RectInsindBoxPos[j][4][1] = upY[4] + (j * InBoxSizeH24[1]) + InBoxSizeH24[1] / 2
+        RectInsindBoxPos[j][5][1] = upY[5] + (j * InBoxSizeH24[2]) + InBoxSizeH24[2] / 2
+
+        RectInsindBoxPos[2+j][0][1] = midY[0] + (j * InBoxSizeH34[0]) + InBoxSizeH34[0] / 2
+        RectInsindBoxPos[2+j][1][1] = midY[1] + (j * InBoxSizeH34[1]) + InBoxSizeH34[1] / 2
+        RectInsindBoxPos[2+j][2][1] = midY[2] + (j * InBoxSizeH34[2]) + InBoxSizeH34[2] / 2
+
+        RectInsindBoxPos[2+j][3][1] = midY[3] + (j * InBoxSizeH44[0]) + InBoxSizeH44[0] / 2
+        RectInsindBoxPos[2+j][4][1] = midY[4] + (j * InBoxSizeH44[1]) + InBoxSizeH44[1] / 2
+        RectInsindBoxPos[2+j][5][1] = midY[5] + (j * InBoxSizeH44[2]) + InBoxSizeH44[2] / 2
+
     return 0
 
 
@@ -148,7 +266,6 @@ def Cal_RectIn():
 def draw_RectIn():
     global img, img_Org, imgOut, RectInsindBoxPos,RIB_Size
     Cal_RectIn()
-
 
     for i in range(0, 4):
         for j in range(0, 6):
@@ -217,13 +334,13 @@ def draw_circle(event, x,y, flags, param):
             drawing = 1
             RectOutBoxPos[0][0][0] = x
             RectOutBoxPos[0][0][1] = y
-            print "new box",drawing
+            #print "new box",drawing
         elif DragBoxPosX == 1 and DragBoxPosY == 1:
             drawing = 3
-            print "move box"
+            #print "move box"
         else:
             drawing = 2
-            print "modi box", DragBoxPosY,DragBoxPosX
+            #print "modi box", DragBoxPosY,DragBoxPosX
 
 
     elif event == cv2.EVENT_MOUSEMOVE:
@@ -281,9 +398,7 @@ while True:
     cv2.imshow('imgOut', imgOut)
 
     k = cv2.waitKey(1) & 0xFF
-    if k == ord('m'):
-        mode = not mode
-    elif k == 27:
+    if k == 27:
         break
 
 cv2.destroyAllWindows()
