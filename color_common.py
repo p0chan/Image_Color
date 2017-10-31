@@ -381,6 +381,7 @@ def draw_circle(event, x,y, flags, param):
             RectOutBoxPos[0][0][0] = x
             RectOutBoxPos[0][0][1] = y
             # print "new box",drawing
+        print y,x
 
     elif event == cv2.EVENT_MOUSEMOVE:
 
@@ -454,8 +455,10 @@ def draw_circle(event, x,y, flags, param):
 
 
 
-cv2.namedWindow('imgOut')
+#cv2.namedWindow('imgOut')
+cv2.namedWindow('imgOut', flags =cv2.WINDOW_NORMAL  )
 cv2.setMouseCallback('imgOut',draw_circle)
+#cv2.namedWindow('imgOut',cv2.WINDOW_AUTOSIZE)
 
 
 if(ini.IsOption('OutBox','postion')) :
@@ -473,11 +476,10 @@ if (ini.IsOption('InBox', 'rib_size')):
     RIB_Size = ini.GetDataInt('InBox', 'rib_size')
 
 
-
+#img_Org = cv2.resize(img_Org, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+#img_Org = cv2.resize(img_Org, (jpgwidth*2, jpgheight*2), interpolation=cv2.INTER_CUBIC)
 
 while True:
-
-
 
 
     cv2.imshow('imgOut', imgOut)
