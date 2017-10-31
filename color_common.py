@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import copy
 
+import INI_Config as ini
+
 
 
 """
@@ -34,6 +36,12 @@ DragOutBoxPosX=-1
 
 DragInBoxPosY=-1
 DragInBoxPosX=-1
+
+ini.OpenFile('config')
+#print ini.GetSectionS()
+#print ini.GetItemS('OutBox')
+#print ini.GetOptionS('OutBox')
+
 
 
 #http://xritephoto.com/documents/literature/en/ColorData-1p_EN.pdf
@@ -132,6 +140,9 @@ def draw_RectOut():
         for j in range(0, 3):
             cv2.rectangle(img, GetOutBoxPos(i, j, -ROB_Size), GetOutBoxPos(i, j, ROB_Size), (255, 255, 255), 1)
 
+    ini.SetData('OutBox', 'Postion', RectOutBoxPos.tolist())
+    ini.SetData('OutBox', 'ROB_Size', ROB_Size)
+    ini.FlashFile()
 
 
 
@@ -273,6 +284,8 @@ def Cal_RectIn():
         RectInsindBoxPos[2+j][4][1] = midY[4] + (j * InBoxSizeH44[1]) + InBoxSizeH44[1] / 2
         RectInsindBoxPos[2+j][5][1] = midY[5] + (j * InBoxSizeH44[2]) + InBoxSizeH44[2] / 2
 
+
+
     return 0
 
 
@@ -286,7 +299,9 @@ def draw_RectIn():
 
     SumRgb_RectIn()
     draw_RectInerIn()
-
+    ini.SetData('InBox', 'Postion', RectInsindBoxPos.tolist())
+    ini.SetData('InBox', 'RIB_Size', RIB_Size)
+    ini.FlashFile()
     return
 
 def SumRgb_RectIn():
@@ -423,9 +438,7 @@ def draw_circle(event, x,y, flags, param):
             RectOutBoxPos[2][2][1] = y
             drawing = 9
             Cal_RectOut()
-            draw_RectOut()
             Cal_RectIn()
-            draw_RectIn()
         elif drawing == 4:
             drawing = 9
         elif drawing == 3:
@@ -434,7 +447,6 @@ def draw_circle(event, x,y, flags, param):
             drawing = 9
             RectOutBoxPos[DragOutBoxPosY][DragOutBoxPosX][0] = x
             RectOutBoxPos[DragOutBoxPosY][DragOutBoxPosX][1] = y
-            draw_RectOut()
 
         draw_RectOut()
         draw_RectIn()
@@ -445,7 +457,23 @@ def draw_circle(event, x,y, flags, param):
 cv2.namedWindow('imgOut')
 cv2.setMouseCallback('imgOut',draw_circle)
 
-#cv2.rectangle(img, (195, 105), (514, 364),(255,255,255),1)
+
+if(ini.IsOption('OutBox','postion')) :
+    RectOutBoxPos = np.asarray(ini.GetList('OutBox', 'postion'))
+    draw_RectOut()
+
+if(ini.IsOption('InBox','postion')) :
+    RectInsindBoxPos = np.asarray(ini.GetList('InBox', 'postion'))
+    draw_RectIn()
+
+if (ini.IsOption('OutBox', 'rob_size')):
+    ROB_Size = ini.GetDataInt('OutBox', 'rob_size')
+
+if (ini.IsOption('InBox', 'rib_size')):
+    RIB_Size = ini.GetDataInt('InBox', 'rib_size')
+
+
+
 
 while True:
 
