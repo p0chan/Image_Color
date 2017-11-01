@@ -1,115 +1,121 @@
 import cv2
 import pandas as pd
 import numpy as np
+import copy
 
 CCS_LAB_A_MIN=-70
-CCS_LAB_A_MAX=90
-CCS_LAB_B_MIN=-60
+CCS_LAB_A_MAX=80
+CCS_LAB_B_MIN=-70
 CCS_LAB_B_MAX=100
 
-CCS_LAB_X_RANGE=160
-CCS_LAB_Y_RANGE=160
 
 
-
-
+#http://www.easyrgb.com/en/math.php
 def labTorgb(labData):
 
+    CIE_L = labData[0]
+    CIE_a = labData[1]
+    CIE_b = labData[2]
     #LAB -> XYZ
-    XYZData = np.zeros(3, np.float)
-    XYZData[1] = ( labData[0] + 16. ) / 116.
-    XYZData[0] = labData[1] / 500. + XYZData[1]
-    XYZData[2] = XYZData[1] - labData[2] / 200.
+    var_Y = (CIE_L  + 16.) / 116.
+    var_X = CIE_a  / 500. + var_Y
+    var_Z = var_Y - CIE_b  / 200.
 
-    if ( pow(XYZData[1], 3.0) > 0.008856 ) :
-        XYZData[1] = pow(XYZData[1], 3.0)
-    else:
-        XYZData[1] = ( XYZData[1] - 16. / 116.0 ) / 7.787
+    if (var_Y ** 3 > 0.008856) : var_Y = var_Y ** 3
+    else                       : var_Y = ( var_Y - 16 / 116 ) / 7.787
+    if (var_X ** 3 > 0.008856) :var_X = var_X ** 3
+    else                      : var_X = ( var_X - 16 / 116 ) / 7.787
+    if (var_Z ** 3 > 0.008856): var_Z = var_Z ** 3
+    else                      : var_Z = ( var_Z - 16 / 116 ) / 7.787
 
-    if ( pow(XYZData[0], 3.0) > 0.008856 ) :
-        XYZData[0] = pow(XYZData[0], 3.0)
-    else:
-        XYZData[0] = ( XYZData[0] - 16. / 116.0 ) / 7.787
+    X = var_X * 95.047   #Reference - X
+    Y = var_Y * 100.     #Reference - Y
+    Z = var_Z * 108.883  #Reference - Z
     
-    if ( pow(XYZData[2], 3.0) > 0.008856 ) :
-        XYZData[2] = pow(XYZData[2], 3.0)
-    else:
-        XYZData[2] = ( XYZData[2] - 16. / 116.0 ) / 7.787
-    
-    X = 95.047 * XYZData[0]
-    Y = 100. * XYZData[1]
-    Z = 108.883 * XYZData[2]
     #print X,Y,Z
 
     # XYZ -> RGB
-    RGBDATA = np.zeros(3, np.float)
-    XYZData[0] = X / 100.
-    XYZData[1] = Y / 100.
-    XYZData[2] = Z / 100.
+    var_X = X / 100
+    var_Y = Y / 100
+    var_Z = Z / 100
 
-    RGBDATA[0] = XYZData[0] *  3.2406 + XYZData[1] * -1.5372 + XYZData[2] * -0.4986
-    RGBDATA[1] = XYZData[0] * -0.9689 + XYZData[1] *  1.8758 + XYZData[2] *  0.0415
-    RGBDATA[2] = XYZData[0] *  0.0557 + XYZData[1] * -0.2040 + XYZData[2] *  1.0570
+    var_R = var_X * 3.2406 + var_Y * -1.5372 + var_Z * -0.4986
+    var_G = var_X * -0.9689 + var_Y * 1.8758 + var_Z * 0.0415
+    var_B = var_X * 0.0557 + var_Y * -0.2040 + var_Z * 1.0570
 
-    if ( RGBDATA[0] > 0.0031308 ) :
-        RGBDATA[0] = 1.055 * pow( RGBDATA[0], ( 1 / 2.4 ) ) - 0.055
-    else:
-        RGBDATA[0] = 12.92 * RGBDATA[0]
+    if (var_R > 0.0031308) : var_R = 1.055 * ( var_R ** ( 1 / 2.4 ) ) - 0.055
+    else                   : var_R = 12.92 * var_R
+    if (var_G > 0.0031308) : var_G = 1.055 * ( var_G ** ( 1 / 2.4 ) ) - 0.055
+    else                   : var_G = 12.92 * var_G
+    if (var_B > 0.0031308) : var_B = 1.055 * ( var_B ** ( 1 / 2.4 ) ) - 0.055
+    else                   : var_B = 12.92 * var_B
 
-    if ( RGBDATA[1] > 0.0031308 ) :
-        RGBDATA[1] = 1.055 * pow( RGBDATA[1], ( 1 / 2.4 ) ) - 0.055
-    else:
-        RGBDATA[1] = 12.92 * RGBDATA[1]
+    if (var_R < 0.):
+        var_R = 0.
+    if (var_R > 1.):
+        var_R = 1.
 
-    if ( RGBDATA[2] > 0.0031308 ) :
-        RGBDATA[2] = 1.055 * pow( RGBDATA[2], ( 1 / 2.4 ) ) - 0.055
-    else:
-        RGBDATA[2] = 12.92 * RGBDATA[2]
+    if (var_G < 0.):
+        var_G = 0.
+    if (var_G > 1.):
+        var_G = 1.
 
-    if (RGBDATA[0] < 0):
-        RGBDATA[0] = 0
-    if (RGBDATA[0] > 1):
-        RGBDATA[0] = 1
+    if (var_B < 0.):
+        var_B = 0.
+    if (var_B > 1.):
+        var_B = 1.
 
-    if (RGBDATA[1] < 0):
-        RGBDATA[1] = 0
-    if (RGBDATA[1] > 1):
-        RGBDATA[1] = 1
+    sR = var_R * 255
+    sG = var_G * 255
+    sB = var_B * 255
 
-    if (RGBDATA[1] < 0):
-        RGBDATA[1] = 0
-    if (RGBDATA[1] > 1):
-        RGBDATA[1] = 1
-
-    cdRGB = np.zeros(3, np.int)
-    cdRGB[2] = RGBDATA[0] * 255
-    cdRGB[1] = RGBDATA[1] * 255
-    cdRGB[0] = RGBDATA[2] * 255
-
+    cdRGB = np.zeros(3, np.uint8)
+    cdRGB[2] = sR
+    cdRGB[1] = sG
+    cdRGB[0] = sB
+    #print cdRGB
     return cdRGB
 
+def rgbTolab(labData):
+    return
 
+width =CCS_LAB_A_MAX-CCS_LAB_A_MIN
+height =CCS_LAB_B_MAX-CCS_LAB_B_MIN
 
-cv2.namedWindow('imgLab', flags =cv2.WINDOW_NORMAL  )
-imgLab = np.zeros(((CCS_LAB_B_MAX-CCS_LAB_B_MIN),(CCS_LAB_A_MAX-CCS_LAB_A_MIN),3), np.uint8)
+cv2.namedWindow('Lab', flags =cv2.WINDOW_NORMAL  )
+imgLabOrg = np.zeros((height,width,3), np.uint8)
+imgLabOut = np.zeros((height, width, 3), np.uint8)
 
 cdLAB = np.zeros(3, np.float)
-cdLAB[0] = 90
+cdLAB[0] = 90.
+
 for b in range(CCS_LAB_B_MIN, CCS_LAB_B_MAX):
     for a in range(CCS_LAB_A_MIN, CCS_LAB_A_MAX):
         cdLAB[1] = a
         cdLAB[2] = b
-        imgLab[abs(CCS_LAB_B_MIN) + b, abs(CCS_LAB_A_MIN) + a] = labTorgb(cdLAB)
+
+        y = height - (abs(CCS_LAB_B_MIN) + b) - 1
+        x = abs(CCS_LAB_A_MIN)+a
+        imgLabOrg[y,x] = labTorgb(cdLAB)
+
+
+
+imgLabOrg = cv2.resize(imgLabOrg, (width*2, height*2), interpolation=cv2.INTER_CUBIC)
 
 
 
 
+def DrowABPos(IdealRGB,ReadRGB):
+    global imgLabOut
+    #ReadTmp = np.zeros((4, 6, 3), np.int)
+    LABtmp = np.zeros(3, np.float)
+    LABtmp = rgbTolab(IdealRGB)
 
+    return
 
-while True:
-    cv2.imshow('imgLab', imgLab)
-    k = cv2.waitKey(1) & 0xFF
-    if k == 27:
-        break
-
-cv2.destroyAllWindows()
+def ShowLabRect():
+    global imgLabOrg,imgLabOut
+    imgLabOut = copy.deepcopy(imgLabOrg)
+    DrowABPos()
+    cv2.imshow('Lab', imgLabOut)
+    return

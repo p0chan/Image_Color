@@ -4,6 +4,7 @@ import numpy as np
 import copy
 
 import INI_Config as ini
+import color_space as cp
 
 
 
@@ -455,10 +456,10 @@ def draw_circle(event, x,y, flags, param):
 
 
 
-#cv2.namedWindow('imgOut')
 cv2.namedWindow('imgOut', flags =cv2.WINDOW_NORMAL  )
-cv2.setMouseCallback('imgOut',draw_circle)
 #cv2.namedWindow('imgOut',cv2.WINDOW_AUTOSIZE)
+cv2.setMouseCallback('imgOut',draw_circle)
+
 
 
 if(ini.IsOption('OutBox','postion')) :
@@ -480,9 +481,9 @@ if (ini.IsOption('InBox', 'rib_size')):
 #img_Org = cv2.resize(img_Org, (jpgwidth*2, jpgheight*2), interpolation=cv2.INTER_CUBIC)
 
 while True:
-
-
     cv2.imshow('imgOut', imgOut)
+    cp.DrowABPos(cdIdealRGB,ReadRGB)
+    cp.ShowLabRect()
 
     k = cv2.waitKey(1) & 0xFF
     if k == 27:
