@@ -187,9 +187,52 @@ def YxyTorgb(Yxy):
     return cdRGB
 
 
+def rgbToycbcr(rgbData):
+    cdYcbcr = np.zeros(3, np.float)
+    var_R = rgbData[0]/255.
+    var_G = rgbData[1]/255.
+    var_B = rgbData[2]/255.
+    cdYcbcr[0] = (0.257*var_R + 0.504*var_G + 0.098*var_B) * 255.
+    cdYcbcr[1] = ((-0.148*var_R - 0.291*var_G + 0.439*var_B) + 0.5) * 255.
+    cdYcbcr[2] = ((0.439*var_R - 0.368*var_G - 0.071*var_B) + 0.5 ) * 255.
+    return cdYcbcr
 
+def rgbTohsv(rgbData):
+    cdHsv = np.zeros(3, np.float)
+    var_R = rgbData[0] / 255.
+    var_G = rgbData[1] / 255.
+    var_B = rgbData[2] / 255.
+    var_Min = min(var_R, min(var_G, var_B))
+    var_Max = max(var_R, max(var_G, var_B))
+    del_Max = var_Max - var_Min
+    V = var_Max
+    H=0.
+    S=0.
+    if (del_Max == 0):
+        H = 0
+        S = 0
+    else:
+        S = del_Max / var_Max
+        del_R = (((var_Max - var_R) / 6.) + (del_Max / 2.)) / del_Max
+        del_G = (((var_Max - var_G) / 6.) + (del_Max / 2.)) / del_Max
+        del_B = (((var_Max - var_B) / 6.) + (del_Max / 2.)) / del_Max
 
+        if (var_R == var_Max):
+            H = del_B - del_G
+        elif ( var_G == var_Max ):
+            H = (1 / 3) + del_R - del_B
+        elif (var_B == var_Max):
+            H = (2 / 3) + del_G - del_R
 
+        if (H < 0):
+            H += 1
+        if (H > 1):
+            H -= 1
+
+        cdHsv[0] = H
+        cdHsv[1] = S
+        cdHsv[2] = V
+        return cdHsv
 
 def DrowLABPos(IdealRGB,ReadRGB):
     global imgLabOrg,imgLabOut

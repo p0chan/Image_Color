@@ -25,6 +25,8 @@ img = copy.deepcopy(img_Org)
 imgOut = np.zeros(img_Org.shape, np.int)
 imgOut = copy.deepcopy(img_Org)
 
+imgRgbtoRgb = np.zeros(img_Org.shape, np.int)
+imgRgbtoRgb = copy.deepcopy(img_Org)
 
 drawing = 0
 RectOutBoxPos = np.zeros((3,3,2), np.int)
@@ -309,6 +311,7 @@ def draw_RectIn():
     cp.DrowYxyPos(cdIdealRGB, ReadRGB)
     cp.ShowLabRect()
 
+    RgbtoRgb()
     TEXT_OUT()
     return
 
@@ -392,6 +395,7 @@ def draw_circle(event, x,y, flags, param):
 
     elif event == cv2.EVENT_MOUSEMOVE:
 
+        imgOut = copy.deepcopy(img)
 
         if drawing == 1:
            img = np.zeros(img_Org.shape, np.int)
@@ -433,7 +437,7 @@ def draw_circle(event, x,y, flags, param):
             draw_RectIn()
 
 
-        imgOut = copy.deepcopy(img)
+
 
 
     elif event == cv2.EVENT_LBUTTONUP:
@@ -458,33 +462,90 @@ def draw_circle(event, x,y, flags, param):
 
         draw_RectOut()
         draw_RectIn()
+
         imgOut = copy.deepcopy(img)
 
+
+
 def TEXT_OUT():
-    global imgOut
-    dblSaturation=0
-    dblMean=0
-    dblMax=0
-    dblColor1=0
-    dblHSVSaturation=0
+    global img,cdIdealRGB, ReadRGB
+
+    def Get_dblSaturation():
+        IdealLab = np.zeros((4, 6, 3), np.float)
+        ReadLab  = np.zeros((4, 6, 3), np.float)
+        DeltaLdealLab =0
+        DeltaReadLab =0
+        for i in range(0, 4):
+            for j in range(0, 6):
+                IdealLab[i][j] = cp.rgbTolab(cdIdealRGB[i][j])
+                ReadLab[i][j] = cp.rgbTolab(ReadRGB[i][j])
+
+                DeltaLdealLab += np.sqrt((IdealLab[i][j][1]**2) + (IdealLab[i][j][2]**2))
+                DeltaReadLab += np.sqrt((ReadLab[i][j][1] ** 2) + (ReadLab[i][j][2] ** 2))
+        DeltaSat = (DeltaLdealLab/24.)/(DeltaReadLab/24.) * 100.
+
+        dblDiff=0.
+        dblMean = 0.
+        dblMax=0.
+        for i in range(0, 4):
+            for j in range(0, 6):
+                DeltaLdealLab += np.sqrt((IdealLab[i][j][1] ** 2) + (IdealLab[i][j][2] ** 2))
+                DeltaReadLab += np.sqrt(((ReadLab[i][j][1]/DeltaSat*100) ** 2) + ((ReadLab[i][j][2]/DeltaSat*100) ** 2))
+                dblDiff = abs(DeltaReadLab - DeltaLdealLab);
+                dblMean += dblDiff
+                if (dblMax < dblDiff):
+                    dblMax = dblDiff
+        dblMean /= 24.
+
+        Colmean = np.zeros(3, np.float)
+        for i in range(0, 4):
+            for j in range(0, 6):
+                Colmean += cp.rgbToycbcr(ReadRGB[i][j])
+        YLevel = Colmean/24.
+
+        Hsv = np.zeros(3, np.float)
+        for j in range(0, 6):
+            Hsv += cp.rgbTohsv(ReadRGB[3][j])
+
+
+
+        return DeltaSat,dblMean,dblMax,YLevel[0],Hsv[2]
+
+    dblSaturation,dblMean,dblMax,YLevel,dblHSVSaturation = Get_dblSaturation()
+
+
     TEXT1 = "saturation :%0.2f%% " % (dblSaturation)
     TEXT2 = 'diff mean :%0.2f'  % (dblMean)
     TEXT3 = 'diff max : %0.2f'  % (dblMax)
-    TEXT4 = 'Y Level : %0.2f'  % (dblColor1)
+    TEXT4 = 'Y Level : %0.2f'  % (YLevel)
     TEXT5 = 'HSV Saturation : %0.2f'  % (dblHSVSaturation/6)
 
-    cv2.putText(imgOut, TEXT1, (1, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-    cv2.putText(imgOut, TEXT2, (1, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-    cv2.putText(imgOut, TEXT3, (1, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-    cv2.putText(imgOut, TEXT4, (1, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-    cv2.putText(imgOut, TEXT5, (1, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(img, TEXT1, (1, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(img, TEXT2, (1, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(img, TEXT3, (1, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(img, TEXT4, (1, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(img, TEXT5, (1, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    return 0
+
+
+def RgbtoRgb():
+    global img_Org,imgRgbtoRgb,jpgheight, jpgwidth
+    imgRgbtoRgb = np.zeros(img_Org.shape, np.uint8)
+    CalMat = np.zeros((3,3), np.float)
+    CalMat[0, 0] = 1.
+    CalMat[1, 1] = 1.
+    CalMat[2, 2] = 1.
+    for i in range(0, jpgheight):
+        for j in range(0, jpgwidth):
+            imgRgbtoRgb[i][j] = np.dot(CalMat , img_Org[i][j])
+
+
+
     return 0
 
 #cv2.namedWindow('imgOut', flags =cv2.WINDOW_NORMAL  )
 cv2.namedWindow('imgOut',cv2.WINDOW_AUTOSIZE)
 cv2.setMouseCallback('imgOut',draw_circle)
-
-
 
 if(ini.IsOption('OutBox','postion')) :
     RectOutBoxPos = np.asarray(ini.GetList('OutBox', 'postion'))
@@ -505,9 +566,14 @@ if (ini.IsOption('InBox', 'rib_size')):
 #img_Org = cv2.resize(img_Org, (jpgwidth*2, jpgheight*2), interpolation=cv2.INTER_CUBIC)
 
 
+
 while True:
 
     cv2.imshow('imgOut', imgOut)
+
+    cv2.imshow('imgRgbtoRgb', imgRgbtoRgb)
+
+
     k = cv2.waitKey(1) & 0xFF
     if k == 27:
         break
