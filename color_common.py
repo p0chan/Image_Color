@@ -46,6 +46,7 @@ ini.OpenFile('config')
 
 
 #http://xritephoto.com/documents/literature/en/ColorData-1p_EN.pdf
+cdIdealRGB = np.zeros((4,6,3), np.int)
 cdIdealRGB = \
     [[[68,82,115],     [130,150,194],     [157,122,98],     [67,108,87],     [177,128,133],     [170,189,103]],
      [[44,126,224],     [166,91,80],     [99,90,193],     [108,60,94],     [64,188,157],     [46,163,224]],
@@ -303,6 +304,12 @@ def draw_RectIn():
     ini.SetData('InBox', 'Postion', RectInsindBoxPos.tolist())
     ini.SetData('InBox', 'RIB_Size', RIB_Size)
     ini.FlashFile()
+
+    cp.DrowLABPos(cdIdealRGB, ReadRGB)
+    cp.DrowYxyPos(cdIdealRGB, ReadRGB)
+    cp.ShowLabRect()
+
+    TEXT_OUT()
     return
 
 def SumRgb_RectIn():
@@ -328,10 +335,9 @@ def SumRgb_RectIn():
 
 
 def draw_RectInerIn():
-    global img, img_Org, imgOut, RectInsindBoxPos, RIB_Size,cdIdealRGB
+    global img, img_Org, imgOut, RectInsindBoxPos, RIB_Size,cdIdealRGB,ReadRGB
     InSizeX = RIB_Size/3
     InSizeY = RIB_Size/2
-
 
     for i in range(0, 4):
         for j in range(0, 6):
@@ -382,7 +388,7 @@ def draw_circle(event, x,y, flags, param):
             RectOutBoxPos[0][0][0] = x
             RectOutBoxPos[0][0][1] = y
             # print "new box",drawing
-        print y,x
+
 
     elif event == cv2.EVENT_MOUSEMOVE:
 
@@ -454,10 +460,28 @@ def draw_circle(event, x,y, flags, param):
         draw_RectIn()
         imgOut = copy.deepcopy(img)
 
+def TEXT_OUT():
+    global imgOut
+    dblSaturation=0
+    dblMean=0
+    dblMax=0
+    dblColor1=0
+    dblHSVSaturation=0
+    TEXT1 = "saturation :%0.2f%% " % (dblSaturation)
+    TEXT2 = 'diff mean :%0.2f'  % (dblMean)
+    TEXT3 = 'diff max : %0.2f'  % (dblMax)
+    TEXT4 = 'Y Level : %0.2f'  % (dblColor1)
+    TEXT5 = 'HSV Saturation : %0.2f'  % (dblHSVSaturation/6)
 
+    cv2.putText(imgOut, TEXT1, (1, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(imgOut, TEXT2, (1, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(imgOut, TEXT3, (1, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(imgOut, TEXT4, (1, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    cv2.putText(imgOut, TEXT5, (1, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
+    return 0
 
-cv2.namedWindow('imgOut', flags =cv2.WINDOW_NORMAL  )
-#cv2.namedWindow('imgOut',cv2.WINDOW_AUTOSIZE)
+#cv2.namedWindow('imgOut', flags =cv2.WINDOW_NORMAL  )
+cv2.namedWindow('imgOut',cv2.WINDOW_AUTOSIZE)
 cv2.setMouseCallback('imgOut',draw_circle)
 
 
@@ -480,11 +504,10 @@ if (ini.IsOption('InBox', 'rib_size')):
 #img_Org = cv2.resize(img_Org, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
 #img_Org = cv2.resize(img_Org, (jpgwidth*2, jpgheight*2), interpolation=cv2.INTER_CUBIC)
 
-while True:
-    cv2.imshow('imgOut', imgOut)
-    cp.DrowABPos(cdIdealRGB,ReadRGB)
-    cp.ShowLabRect()
 
+while True:
+
+    cv2.imshow('imgOut', imgOut)
     k = cv2.waitKey(1) & 0xFF
     if k == 27:
         break
