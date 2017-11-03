@@ -2,7 +2,7 @@ import cv2
 import pandas as pd
 import numpy as np
 import copy
-
+import math
 import INI_Config as ini
 import color_space as cp
 
@@ -49,11 +49,11 @@ ini.OpenFile('config')
 
 #http://xritephoto.com/documents/literature/en/ColorData-1p_EN.pdf
 cdIdealRGB = np.zeros((4,6,3), np.int)
-cdIdealRGB = \
+cdIdealRGB = np.array(\
     [[[68,82,115],     [130,150,194],     [157,122,98],     [67,108,87],     [177,128,133],     [170,189,103]],
      [[44,126,224],     [166,91,80],     [99,90,193],     [108,60,94],     [64,188,157],     [46,163,224]],
      [[150,61,56],     [73,148,70],     [60,54,175],     [31,199,231],     [149,86,187],     [161,133,8]],
-     [[243,243,242],     [200,200,200],     [160,160,160],     [122,122,121],     [85,85,85],     [52,52,52]]]
+     [[243,243,242],     [200,200,200],     [160,160,160],     [122,122,121],     [85,85,85],     [52,52,52]]])
 
 ReadRGB = np.zeros((4,6,3), np.int)
 
@@ -480,34 +480,32 @@ def TEXT_OUT():
                 IdealLab[i][j] = cp.rgbTolab(cdIdealRGB[i][j])
                 ReadLab[i][j] = cp.rgbTolab(ReadRGB[i][j])
 
-                DeltaLdealLab += np.sqrt((IdealLab[i][j][1]**2) + (IdealLab[i][j][2]**2))
-                DeltaReadLab += np.sqrt((ReadLab[i][j][1] ** 2) + (ReadLab[i][j][2] ** 2))
+                DeltaLdealLab += math.sqrt((IdealLab[i][j][1]**2) + (IdealLab[i][j][2]**2))
+                DeltaReadLab += math.sqrt((ReadLab[i][j][1] ** 2) + (ReadLab[i][j][2] ** 2))
         DeltaSat = (DeltaLdealLab/24.)/(DeltaReadLab/24.) * 100.
-
+        ###################################################
         dblDiff=0.
         dblMean = 0.
         dblMax=0.
         for i in range(0, 4):
             for j in range(0, 6):
-                DeltaLdealLab += np.sqrt((IdealLab[i][j][1] ** 2) + (IdealLab[i][j][2] ** 2))
-                DeltaReadLab += np.sqrt(((ReadLab[i][j][1]/DeltaSat*100) ** 2) + ((ReadLab[i][j][2]/DeltaSat*100) ** 2))
-                dblDiff = abs(DeltaReadLab - DeltaLdealLab);
+                DeltaLdealLab += math.sqrt((IdealLab[i][j][1] ** 2) + (IdealLab[i][j][2] ** 2))
+                DeltaReadLab += math.sqrt(((ReadLab[i][j][1]/DeltaSat*100) ** 2) + ((ReadLab[i][j][2]/DeltaSat*100) ** 2))
+                dblDiff = abs(DeltaReadLab - DeltaLdealLab)
                 dblMean += dblDiff
                 if (dblMax < dblDiff):
                     dblMax = dblDiff
         dblMean /= 24.
-
+        ###################################################
         Colmean = np.zeros(3, np.float)
         for i in range(0, 4):
             for j in range(0, 6):
                 Colmean += cp.rgbToycbcr(ReadRGB[i][j])
         YLevel = Colmean/24.
-
+        ###################################################
         Hsv = np.zeros(3, np.float)
         for j in range(0, 6):
             Hsv += cp.rgbTohsv(ReadRGB[3][j])
-
-
 
         return DeltaSat,dblMean,dblMax,YLevel[0],Hsv[2]
 
@@ -529,12 +527,20 @@ def TEXT_OUT():
 
 
 def RgbtoRgb():
-    global img_Org,imgRgbtoRgb,jpgheight, jpgwidth
+    global img_Org,imgRgbtoRgb,jpgheight, jpgwidth,cdIdealRGB, ReadRGB
     imgRgbtoRgb = np.zeros(img_Org.shape, np.uint8)
     CalMat = np.zeros((3,3), np.float)
     CalMat[0, 0] = 1.
     CalMat[1, 1] = 1.
     CalMat[2, 2] = 1.
+
+    CalMat = cp.CalcCcMatrix(cdIdealRGB.reshape(24, 3),ReadRGB.reshape(24, 3))
+    """
+    print CalMat
+    print CalMat[0][0]+CalMat[0][1]+CalMat[0][2]
+    print CalMat[1][0] + CalMat[1][1] + CalMat[1][2]
+    print CalMat[2][0] + CalMat[2][1] + CalMat[2][2]
+    """
     for i in range(0, jpgheight):
         for j in range(0, jpgwidth):
             imgRgbtoRgb[i][j] = np.dot(CalMat , img_Org[i][j])

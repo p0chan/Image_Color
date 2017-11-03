@@ -336,6 +336,19 @@ for b in np.linspace(0, 1,100):
 imgYxyOut = copy.deepcopy(imgYxyOrg)
 
 
+def CalcCcMatrix(Source,Target):
+    Mat33 = np.dot(Source.T,Source)
+    Mat33T = np.linalg.inv(Mat33)
+    Mat3_24 = np.dot(Mat33T,Source.T)
+    CCMT = np.dot(Mat3_24 , Target)
+    for i in range(0, 3):
+        rowSum = (CCMT[0][i] + CCMT[1][i] + CCMT[2][i])
+        CCMT[0][i] /= rowSum
+        CCMT[1][i] /= rowSum
+        CCMT[2][i] /= rowSum
+    CCMT = CCMT.T
+    return CCMT
+
 cv2.namedWindow('Lab',cv2.WINDOW_AUTOSIZE)
 cv2.namedWindow('Yxy',cv2.WINDOW_AUTOSIZE)
 """
